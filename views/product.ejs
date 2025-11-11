@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Product Page</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container" data-username="<%= typeof username !== 'undefined' ? username.replace(/"/g, '&quot;') : '' %>" data-location="<%= typeof location !== 'undefined' ? location.replace(/"/g, '&quot;') : '' %>">
+    <div class="header-section">
+      <h1>Welcome to the Product Page</h1>
+      <div class="user-section">
+        <div class="user-info">
+          <span class="username-display">User: <%= username %></span>
+          <span class="location-display">Country: <%= location || 'Not specified' %></span>
+        </div>
+        <a href="/logout" class="logout-btn">Logout</a>
+      </div>
+    </div>
+    <% 
+      // Default prices
+      const headphonesDefaultPrice = 110.99;
+      const shoesDefaultPrice = 90.00;
+      const watchDefaultPrice = 75.82;
+      
+      // Get actual prices (use VWO value if different from default, otherwise use default)
+      // For floating point comparison, we need to handle potential precision issues
+      const headphonesPrice = (Math.abs(variableValue - headphonesDefaultPrice) > 0.01) ? variableValue : headphonesDefaultPrice;
+      const shoesPrice = (Math.abs(ShoePricing - shoesDefaultPrice) > 0.01) ? ShoePricing : shoesDefaultPrice;
+      const watchPrice = (Math.abs(WatchPricing - watchDefaultPrice) > 0.01) ? WatchPricing : watchDefaultPrice;
+    %>
+    <div class="products-grid">
+      <div class="product-card">
+        <div class="product-image">
+          <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop" alt="Wireless Headphones" />
+        </div>
+        <div class="product-info">
+          <h2>Wireless Headphones</h2>
+          <p class="product-description">Premium quality wireless headphones with noise cancellation</p>
+          <div class="product-price">
+            <% if (Math.abs(variableValue - headphonesDefaultPrice) > 0.01) { %>
+              <span class="strike">$<%= headphonesDefaultPrice %></span>
+              <span class="new-price">$<%= headphonesPrice %></span>
+              <p class="offer-badge">Special offer for you!</p>
+            <% } else { %>
+              <span class="price">$<%= headphonesPrice %></span>
+            <% } %>
+          </div>
+          <button class="add-to-cart-btn" onclick="addToCart('<%= headphonesPrice %>', 'Wireless Headphones')">
+            Add to Cart
+          </button>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image">
+          <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop" alt="Smart Watch" />
+        </div>
+        <div class="product-info">
+          <h2>Smart Watch</h2>
+          <p class="product-description">Feature-rich smartwatch with fitness tracking</p>
+          <div class="product-price">
+            <% if (Math.abs(WatchPricing - watchDefaultPrice) > 0.01) { %>
+              <span class="strike">$<%= watchDefaultPrice %></span>
+              <span class="new-price">$<%= watchPrice %></span>
+              <p class="offer-badge">Special offer for you!</p>
+            <% } else { %>
+              <span class="price">$<%= watchPrice %></span>
+            <% } %>
+          </div>
+          <button class="add-to-cart-btn" onclick="addToCart('<%= watchPrice %>', 'Smart Watch')">
+            Add to Cart
+          </button>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image">
+          <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop" alt="Running Shoes" />
+        </div>
+        <div class="product-info">
+          <h2>Running Shoes</h2>
+          <p class="product-description">Comfortable running shoes for your daily workouts</p>
+          <div class="product-price">
+            <% if (Math.abs(ShoePricing - shoesDefaultPrice) > 0.01) { %>
+              <span class="strike">$<%= shoesDefaultPrice %></span>
+              <span class="new-price">$<%= shoesPrice %></span>
+              <p class="offer-badge">Special offer for you!</p>
+            <% } else { %>
+              <span class="price">$<%= shoesPrice %></span>
+            <% } %>
+          </div>
+          <button class="add-to-cart-btn" onclick="addToCart('<%= shoesPrice %>', 'Running Shoes')">
+            Add to Cart
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Get username and location from data attributes (safely stored in HTML)
+    const container = document.querySelector('.container');
+    const username = container ? container.getAttribute('data-username') || '' : '';
+    const location = container ? container.getAttribute('data-location') || '' : '';
+
+    async function addToCart(price, productName) {
+      try {
+        // Track event in VWO via server endpoint
+        if (username) {
+          const response = await fetch('/track-event', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              username: username,
+              productName: productName,
+              price: price,
+              location: location || ''
+            })
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            console.log('Event tracked successfully:', result);
+          } else {
+            console.error('Failed to track event:', result);
+          }
+        }
+
+        // Show alert to user
+        alert(`Product added to cart!\n\nProduct: ${productName}\nPrice: $${price}\n\nThank you for your purchase!`);
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+        // Still show alert even if tracking fails
+        alert(`Product added to cart!\n\nProduct: ${productName}\nPrice: $${price}\n\nThank you for your purchase!`);
+      }
+    }
+  </script>
+</body>
+</html>

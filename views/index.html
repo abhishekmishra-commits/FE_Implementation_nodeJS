@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Welcome Back</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-container">
+      <div class="login-header">
+        <div class="logo">🔐</div>
+        <h1>Welcome Back</h1>
+        <p>Sign in to continue to your account</p>
+      </div>
+      
+      <form action="/login" method="POST" class="login-form">
+        <div class="form-group">
+          <label for="region">
+            <span class="label-icon">🌍</span>
+            Country
+          </label>
+          <select 
+            id="region" 
+            name="region" 
+            required
+            class="region-select"
+          >
+            <option value="">Select a country</option>
+            <option value="India">India</option>
+            <option value="US">US</option>
+            <option value="UK">UK</option>
+            <option value="Canada">Canada</option>
+            <option value="Australia">Australia</option>
+            <option value="Germany">Germany</option>
+            <option value="France">France</option>
+            <option value="Japan">Japan</option>
+            <option value="China">China</option>
+            <option value="Brazil">Brazil</option>
+            <option value="Mexico">Mexico</option>
+            <option value="Italy">Italy</option>
+            <option value="Spain">Spain</option>
+            <option value="South Korea">South Korea</option>
+            <option value="Russia">Russia</option>
+            <option value="Netherlands">Netherlands</option>
+            <option value="Sweden">Sweden</option>
+            <option value="Switzerland">Switzerland</option>
+            <option value="Singapore">Singapore</option>
+            <option value="United Arab Emirates">United Arab Emirates</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="username">
+            <span class="label-icon">👤</span>
+            Username
+          </label>
+          <input 
+            type="text" 
+            id="username" 
+            name="username" 
+            placeholder="Enter your username"
+            required
+            autocomplete="username"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password">
+            <span class="label-icon">🔒</span>
+            Password
+          </label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            placeholder="Enter your password"
+            required
+            autocomplete="current-password"
+          />
+        </div>
+
+        <div class="form-options">
+          <label class="remember-me">
+            <input type="checkbox" />
+            <span>Remember me</span>
+          </label>
+          <a href="#" class="forgot-password">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="login-button">
+          <span>Sign In</span>
+          <span class="button-arrow">→</span>
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <p>Don't have an account? <a href="#">Sign up</a></p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

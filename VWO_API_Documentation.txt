@@ -1,0 +1,202 @@
+VWO API Integration Documentation
+=================================
+
+Application Use Case
+--------------------
+This application demonstrates a personalized product detail experience powered by VWO Feature Management & Experimentation (FME). Users log in with a username and select their country; the server sends this context to VWO, retrieves feature variables such as product pricing, sets custom attributes for audience targeting, and tracks add-to-cart interactions as events. The goal is to showcase how VWO can tailor product pricing or messaging per user segment and collect behavioral metrics for experimentation.
+
+Prerequisites
+-------------
+- Node.js (v18+ recommended)
+- npm (v9+ recommended)
+- Valid VWO Account ID and SDK Key with access to the `fmeDemo` feature flag
+
+Installation
+------------
+Install the VWO FME Node SDK dependency:
+```
+npm install vwo-fme-node-sdk
+```
+
+Ensure the dependency is listed in `package.json` under `"dependencies"`:
+```json
+"vwo-fme-node-sdk": "^1.20.1"
+```
+
+SDK Initialization (`vwo.js`)
+-----------------------------
+The SDK is initialized once on server start and the client instance is cached:
+```js
+const { init } = require('vwo-fme-node-sdk');
+
+let vwoClient;
+
+async function initializeVwo() {
+  if (!vwoClient) {
+    vwoClient = await init({
+      accountId: '995166',
+      sdkKey: '89534224fb2eba29d9a51c6a2a50c5b6',
+      pollInterval: 6000,
+      logger: { level: 'DEBUG' }
+    });
+  }
+  return vwoClient;
+}
+
+module.exports = initializeVwo;
+```
+
+Express Setup (`index.js`)
+--------------------------
+1. Import the initializer and configure Express:
+   ```js
+   const express = require('express');
+   const initializeVwo = require('./vwo');
+
+   const app = express();
+   app.use(express.urlencoded({ extended: true }));
+   app.use(express.json());
+   ```
+2. Initialize the SDK inside an async IIFE so the server listens only after VWO client is ready:
+   ```js
+   let vwoClient;
+
+   (async () => {
+     vwoClient = await initializeVwo();
+     // register routes here
+     app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
+   })();
+   ```
+
+User Login Flow
+---------------
+1. User submits the login form with `username` and `region` (country).
+2. `/login` route constructs a `userContext` and interacts with VWO.
+
+```js
+app.post('/login', async (req, res) => {
+  const username = req.body.username;
+  const location = req.body.region || 'Unknown';
+
+  const userContext = {
+    id: username,
+    customVariables: { age: 25, VWOSession: true, location },
+    userAgent: req.headers['user-agent'],
+    ipAddress: req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+  };
+
+  // Custom attribute
+  const attributes = { username };
+  vwoClient.setAttribute(attributes, userContext);
+
+  const flag = await vwoClient.getFlag('fmeDemo', userContext);
+  const variableValue = flag.getVariable('Price', 110.99);
+  const ShoePricing = flag.getVariable('ShoePricing', 90.00);
+  const WatchPricing = flag.getVariable('WatchPricing', 75.82);
+
+  res.render('product', {
+    allVariables: flag.getVariables(),
+    variableValue,
+    ShoePricing,
+    WatchPricing,
+    username,
+    location
+  });
+});
+```
+
+Setting Custom Attributes (`setAttribute`)
+-----------------------------------------
+`setAttribute` associates custom user data with VWO for segmentation and targeting.
+```js
+const attributes = { username };
+vwoClient.setAttribute(attributes, userContext);
+```
+> Note: The method runs after constructing the `userContext` and before retrieving flags or variables.
+
+Fetching Feature Flag & Variables
+---------------------------------
+```js
+const flag = await vwoClient.getFlag('fmeDemo', userContext);
+const isFlagEnabled = flag.isEnabled(); // optional status check
+const price = flag.getVariable('Price', 110.99);
+const shoePrice = flag.getVariable('ShoePricing', 90.00);
+const watchPrice = flag.getVariable('WatchPricing', 75.82);
+const allVariables = flag.getVariables(); // returns complete mapping
+```
+
+Tracking Events (`trackEvent`)
+------------------------------
+Client-side `Add to Cart` button posts to `/track-event`, which logs the VWO metric:
+```js
+app.post('/track-event', async (req, res) => {
+  const { username, productName, price, location } = req.body;
+
+  const userContext = {
+    id: username,
+    customVariables: { age: 25, VWOSession: true, location: location || 'Unknown' },
+    userAgent: req.headers['user-agent'],
+    ipAddress: req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+  };
+
+  const eventProperties = {
+    productName,
+    price: parseFloat(price),
+    timestamp: new Date().toISOString()
+  };
+
+  await vwoClient.trackEvent('addToCart', userContext, eventProperties);
+  res.json({ success: true });
+});
+```
+
+Client-Side Trigger (`views/product.ejs`)
+-----------------------------------------
+```js
+const container = document.querySelector('.container');
+const username = container?.dataset.username || '';
+const location = container?.dataset.location || '';
+
+async function addToCart(price, productName) {
+  if (!username) return;
+
+  await fetch('/track-event', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, productName, price, location })
+  });
+
+  alert(`Product added to cart!\n\nProduct: ${productName}\nPrice: $${price}`);
+}
+```
+
+Logout Mechanism
+----------------
+`GET /logout` simply redirects back to the login page so a new user can sign in without restarting the server:
+```js
+app.get('/logout', (req, res) => {
+  console.log('User logged out');
+  res.redirect('/');
+});
+```
+
+Testing Checklist
+-----------------
+- Start server: `npm start`
+- Navigate to `/` and submit the login form with username & country
+- Verify console logs in Node process:
+  - Username & country captured
+  - `All variables` log present
+- Press “Add to Cart” button:
+  - Alert appears with correct product & price
+  - Server console logs `Event tracked: addToCart ...`
+- Click “Logout” to return to the login page and repeat with another user/country if necessary
+
+Troubleshooting
+---------------
+- **Initialization Errors**: Ensure account ID and SDK key are valid in `vwo.js`.
+- **Network / SDK issues**: Check VWO dashboard availability and server logs (logger level set to DEBUG).
+- **Missing Region/Country**: Login form enforces selection; backend defaults to `'Unknown'` as fallback.
+- **Event Tracking Failures**: `/track-event` endpoint responds with error details; review logs for stack traces.
+
+
