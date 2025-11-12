@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container" data-username="<%= typeof username !== 'undefined' ? username.replace(/"/g, '&quot;') : '' %>" data-location="<%= typeof location !== 'undefined' ? location.replace(/"/g, '&quot;') : '' %>">
+  <div class="container" data-username="<%= typeof username !== 'undefined' ? username.replace(/"/g, '&quot;') : '' %>" data-user-location="<%= typeof location !== 'undefined' ? location.replace(/"/g, '&quot;') : '' %>">
     <div class="header-section">
       <h1>Welcome to the Product Page</h1>
       <div class="user-section">
@@ -102,7 +102,7 @@
     // Get username and location from data attributes (safely stored in HTML)
     const container = document.querySelector('.container');
     const username = container ? container.getAttribute('data-username') || '' : '';
-    const location = container ? container.getAttribute('data-location') || '' : '';
+    const userLocation = container ? container.getAttribute('data-user-location') || '' : '';
 
     async function addToCart(price, productName) {
       try {
@@ -117,7 +117,7 @@
               username: username,
               productName: productName,
               price: price,
-              location: location || ''
+              location: userLocation || ''
             })
           });
 

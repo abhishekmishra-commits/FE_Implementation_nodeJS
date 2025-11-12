@@ -198,5 +198,3 @@ Troubleshooting
 - **Network / SDK issues**: Check VWO dashboard availability and server logs (logger level set to DEBUG).
 - **Missing Region/Country**: Login form enforces selection; backend defaults to `'Unknown'` as fallback.
 - **Event Tracking Failures**: `/track-event` endpoint responds with error details; review logs for stack traces.
-
-
